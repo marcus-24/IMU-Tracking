@@ -7,51 +7,52 @@ import os
 # local imports
 from iotools import IMU
 
+# %% Code Summary
+"""This script is an example for how to collect data from a Yost labs
+bluetooth IMU sensor and display the raw data from each sensor.
+"""
+
 # %% Initialize IMU communication
 '''stream timing settings (microseconds)'''
 interval = 10**4  # sample interval
-duration = 5*10**6  # recording duration
+duration = 20*10**6  # recording duration
 delay = 1000  # delay before recording starts
 baudrate = 115200
 port = 'COM4'
 
-my_imu = IMU(port, baudrate)
-
 # %% Preallocate data
 data_len = int(duration / interval)  # length of the data array
-data = np.zeros((data_len, 13))  # IMU data array
+n_pts = 13  # number of points collected from each 
+data = np.zeros((data_len, n_pts))  # IMU data array
 
 # %% Data Collection
 start_t = time.perf_counter()  # start time
 end_t = time.perf_counter()   # end time
 row = 0  # iterate through IMU data array
 
-with my_imu as device:
+with IMU(port, baudrate) as my_imu:
 
-    device.set_stream(interval, duration, delay)  # set timing parameters set above
-    device.start_streaming()
+    '''Start streaming data'''
+    my_imu.set_stream(interval, duration, delay)  # set timing parameters set above
+    my_imu.start_streaming()
 
+    '''Collect data from IMU'''
     while (end_t - start_t) < duration * 10 ** -6:  # run while run time is below "duration" set
 
-        data[row, :] = device.read_data()
+        data[row, :] = my_imu.read_data()
         row += 1
         end_t = time.perf_counter()  # update end time
 
-    device.stop_streaming()
-    device.software_reset()
+    '''Stop streaming'''
+    my_imu.stop_streaming()
+    my_imu.software_reset()
 
 # %% Save data
-
 data = data[data[:, 0] > 0, :]  # Truncate zeros
 np.savetxt(os.path.join('data', 'data.csv'), data, delimiter=",")
 
-
 # %% Plot Data
-
 time_array = [(timestamp - data[0, 0]) * 10 ** -6 for timestamp in data[:, 0]]  # test time in seconds
-units = ['rad/s', 'G', 'Norm Gauss']
-titles = ['Gyroscope', 'Accelerometer', 'Magnetometer']
-
 
 plt.figure('IMU Sensors')
 plt.subplot(311)

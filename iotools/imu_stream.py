@@ -6,6 +6,9 @@ from typing import Optional
 
 # %% Code Summary
 
+"""The IMU class provides the functions needed to connect and execute commands on the bluetooth IMU.
+"""
+
 # %% Constant command variables
 # Define stream variables
 slots = struct.pack('BBBBBBBBB', 0x50, 0xfa, 0x26, 0x27, 0x23, 0x2B, 0xff, 0xff, 0xff)  # streaming slots for selected data
@@ -27,11 +30,9 @@ class IMU(serial.Serial):
                    cmd: bytes,
                    resp_head: bool = True) -> Optional[bytes]:
         """Writes and sends a command to the IMU.
-
         Args:
             cmd (bytes): command that will be sent to the IMU.
             resp_head (bool, optional): Appended response header for command. Defaults to True.
-
         Returns:
             Optional[bytes]: checksum used to check command
         """
@@ -58,12 +59,11 @@ class IMU(serial.Serial):
         time.sleep(0.5)
 
     def set_stream(self, interval: int, duration: int, delay: int) -> None:
-        """[summary]
-
+        """Set streaming settings for the IMU.
         Args:
-            interval (int): [description]
-            duration (int): [description]
-            delay (int): [description]
+            interval (int): interval between data points (microseconds)
+            duration (int): the duration of the streaming session (microseconds)
+            delay (int): the delay before the data streaming starts (microseconds)
         """
 
         print('---------------------------------------')
@@ -102,10 +102,10 @@ class IMU(serial.Serial):
         print('Success/Failure:', check[0])
 
     def read_data(self) -> np.ndarray:
-        """[summary]
+        """Function used to read data for each interval during streaming.
 
         Returns:
-            np.ndarray: [description]
+            np.ndarray: row of data points for that interval
         """
         num_bytes = 47  # number of bytes requested 
         raw_data = self.read(num_bytes)  # TODO: Make this more dynamic with length
