@@ -1,0 +1,14 @@
+name: imu_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - jupyter
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - pycodestyle
+  - pylint
+  - pyserial=3.4
+  - python=3.9
