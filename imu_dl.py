@@ -56,7 +56,7 @@ class IMU(serial.Serial):
         """
         print('---------------------------------------')
         print('Software reset for port', self.port)
-        self.com_write(self.ser, reset, resp_head=False)
+        self._com_write(reset, resp_head=False)
         print('paused to reinitialize sensor')
         time.sleep(0.5)
 
@@ -96,7 +96,7 @@ class IMU(serial.Serial):
         print('Applying time settings')
         timing = struct.pack('>III', interval, duration, delay)
         stream_timing = b'\x52' + timing
-        self._com_write( stream_timing)
+        self._com_write(stream_timing)
         check = self.read(6)
         print('Success/Failure:', check[0])
 
@@ -125,7 +125,7 @@ class IMU(serial.Serial):
         Returns:
             np.ndarray: [description]
         """
-        raw_data = self.read(47)  # Make this more dynamic with length
+        raw_data = self.read(47)  # TODO: Make this more dynamic with length
         timing = struct.unpack('>I', raw_data[1:5])
         gyro = struct.unpack('>3f', raw_data[7:19])
         acc = struct.unpack('>3f', raw_data[19:31])

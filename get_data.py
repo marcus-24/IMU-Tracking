@@ -12,7 +12,7 @@ interval = 10**4  # sample interval
 duration = 5*10**6  # recording duration
 delay = 1000  # delay before recording starts
 baudrate = 115200
-port = 'COM3'
+port = 'COM4'
 
 my_imu = IMU(port, baudrate)
 
@@ -27,11 +27,11 @@ fname = 'test' # TODO: Set as constant
 start_t = time.perf_counter()  # start time
 end_t = time.perf_counter()   # end time
 row = 0  # iterate through IMU data array
-stop = 0  # used to break while loop
 
 with my_imu as device:
 
     device.set_stream(interval, duration, delay)  # set timing parameters set above
+    time.sleep(1)
     device.start_streaming()
     while (end_t - start_t) < duration * 10 ** -6:  # run while run time is below "duration" set
         data[row, :] = device.read_data()
@@ -47,18 +47,23 @@ with my_imu as device:
         end_t = time.perf_counter()  # update end time
 
     device.stop_streaming()
-
-# %% 
-data = data[data[:, 0] > 0, :]  # Truncate zeros
-np.save(fname, data)
+    device.software_reset()
 
 # %%
+
+data = data[data[:, 0] > 0, :]  # Truncate zeros
+np.save(fname, data)
+np.savetxt('values.csv', data, delimiter=",")
+
+# %% Remove g
 
 # %% Plot Data
 
 time_array = [(x - data[0, 0]) * 10 ** -6 for x in data[:, 0]]  # test time in seconds
 units = ['rad/s', 'G', 'Norm Gauss']
 titles = ['Gyroscope', 'Accelerometer', 'Magnetometer']
+
+
 
 n_sensors = 3
 plt.figure('IMU Sensors')
