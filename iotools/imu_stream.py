@@ -2,6 +2,7 @@ import numpy as np
 import serial
 import struct
 import time
+from typing import Optional
 
 # %% Code Summary
 
@@ -14,34 +15,28 @@ start_stream = struct.pack('BB', 0x55, 0x55)
 stop_stream = struct.pack('BB', 0x56, 0x56)
 reset = struct.pack('B', 0xe2)
 
+
 class IMU(serial.Serial):
 
     def __init__(self,
                  port,
                  baudrate):
         super().__init__(port, baudrate)  # TODO: add keyword arguments needed
-	 			 
-    @staticmethod
-    def _checksum(cmd: bytes) -> bytes:
-        """Calculates the checksum that needs to be sent with a command.
-        Args:
-            cmd (bytes): The command sent to the IMU as a byte.
-        Returns:
-            bytes: checksum that will be appended to the command.
-        """
-        chksum = bytes([sum(cmd) % 256])  # TODO: see if list is needed
-        return chksum
 
     def _com_write(self,
                    cmd: bytes,
-                   resp_head: bool = True) -> bytes:
+                   resp_head: bool = True) -> Optional[bytes]:
         """Writes and sends a command to the IMU.
+
         Args:
             cmd (bytes): command that will be sent to the IMU.
             resp_head (bool, optional): Appended response header for command. Defaults to True.
+
+        Returns:
+            Optional[bytes]: checksum used to check command
         """
 
-        chksum = self._checksum(cmd)
+        chksum = bytes([sum(cmd) % 256])
 
         if resp_head:  # If you would like to use the response header for the data
             final_cmd = b'\xf9' + cmd + chksum
@@ -49,7 +44,9 @@ class IMU(serial.Serial):
         else:
             final_cmd = b'\xf7' + cmd + chksum
 
-        self.write(final_cmd)  # TODO: Add optional output for checksum
+        self.write(final_cmd)
+
+        return self.read(6) if resp_head else None
 
     def software_reset(self) -> None:
         """Resets the software settings on the IMU.
@@ -59,15 +56,6 @@ class IMU(serial.Serial):
         self._com_write(reset, resp_head=False)
         print('paused to reinitialize sensor')
         time.sleep(0.5)
-
-    def _flush(self) -> None:
-        """[summary]
-        """
-        self.flushInput()
-        self.flushOutput()
-        print('---------------------------------------')
-        print('Buffer cleared for ', self._port)
-
 
     def set_stream(self, interval: int, duration: int, delay: int) -> None:
         """[summary]
@@ -84,20 +72,17 @@ class IMU(serial.Serial):
         print('write response header')
 
         print('Setting Right Hand Coordinate system')
-        self._com_write(RightH_axis)
-        check = self.read(6)
+        check = self._com_write(RightH_axis)
         print('Success/Failure:', check[0])
 
         print('Setting up streaming slots')
-        self._com_write(slots)
-        check = self.read(6)
+        check = self._com_write(slots)
         print('Success/Failure:', check[0])
 
         print('Applying time settings')
         timing = struct.pack('>III', interval, duration, delay)
         stream_timing = b'\x52' + timing
-        self._com_write(stream_timing)
-        check = self.read(6)
+        check = self._com_write(stream_timing)
         print('Success/Failure:', check[0])
 
     def start_streaming(self) -> None:
@@ -105,18 +90,15 @@ class IMU(serial.Serial):
         """
         print('---------------------------------------')
         print('Start stream for port ', self.port)
-        self._com_write(start_stream)
-        check = self.read(6)
+        check = self._com_write(start_stream)
         print('Success/Failure:', check[0])
 
     def stop_streaming(self):
-        """
-        Stop streaming the IMU.
+        """Stop streaming the IMU.
         """
         print('---------------------------------------')
-        print('Stop stream for port ',self.port)
-        self._com_write(stop_stream)
-        check = self.read(6)
+        print('Stop stream for port ', self.port)
+        check = self._com_write(stop_stream)
         print('Success/Failure:', check[0])
 
     def read_data(self) -> np.ndarray:
@@ -125,18 +107,16 @@ class IMU(serial.Serial):
         Returns:
             np.ndarray: [description]
         """
-        raw_data = self.read(47)  # TODO: Make this more dynamic with length
-        timing = struct.unpack('>I', raw_data[1:5])
-        gyro = struct.unpack('>3f', raw_data[7:19])
-        acc = struct.unpack('>3f', raw_data[19:31])
-        mag = struct.unpack('>3f', raw_data[31:43])
-        temp = struct.unpack('>f', raw_data[43:])
+        num_bytes = 47  # number of bytes requested 
+        raw_data = self.read(num_bytes)  # TODO: Make this more dynamic with length
+        timing = struct.unpack('>I', raw_data[1:5])  # timestamps
+        gyro = struct.unpack('>3f', raw_data[7:19])  # gyrscope xyz axes
+        acc = struct.unpack('>3f', raw_data[19:31])  # accelerometer xyz axes
+        mag = struct.unpack('>3f', raw_data[31:43])  # magnetometer xyz axes
+        temp = struct.unpack('>f', raw_data[43:])  # temperature sensor
 
-        # data=[t,imu #,button,gx,gy,gz,ax,ay,az,mx,my,mz,temp]
-        data = [timing[0], int(self.port[-1]), raw_data[6], *gyro,
-                *acc, *mag, temp[0]]  # TODO: convert to numpy array
+        # data=[t, imu #, button state, gx, gy, gz, ax, ay, az, mx, my, mz, temp]
+        data = np.array([timing[0], int(self.port[-1]), raw_data[6], *gyro,
+                         *acc, *mag, temp[0]])  # TODO: convert to numpy array
 
-        if raw_data[0] == 0:
-            return data
-        else:
-            return np.zeros(13)
+        return data if raw_data[0] == 0 else np.zeros(13)  # return data if success bit in checksum is 0 else return zero array

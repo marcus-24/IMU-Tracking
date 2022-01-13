@@ -2,9 +2,10 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+import os
 
 # local imports
-from imu_dl import IMU  # TODO: Modify import path
+from iotools import IMU
 
 # %% Initialize IMU communication
 '''stream timing settings (microseconds)'''
@@ -20,9 +21,6 @@ my_imu = IMU(port, baudrate)
 data_len = int(duration / interval)  # length of the data array
 data = np.zeros((data_len, 13))  # IMU data array
 
-fname = 'test' # TODO: Set as constant
-
-
 # %% Data Collection
 start_t = time.perf_counter()  # start time
 end_t = time.perf_counter()   # end time
@@ -31,50 +29,51 @@ row = 0  # iterate through IMU data array
 with my_imu as device:
 
     device.set_stream(interval, duration, delay)  # set timing parameters set above
-    time.sleep(1)
     device.start_streaming()
+
     while (end_t - start_t) < duration * 10 ** -6:  # run while run time is below "duration" set
+
         data[row, :] = device.read_data()
-        if sum(data[row, :]) == 0:
-            print('Failure at row: ', row)
-
         row += 1
-
-        if row == (data_len):
-            print('Streaming Done!')
-            break
-
         end_t = time.perf_counter()  # update end time
 
     device.stop_streaming()
     device.software_reset()
 
-# %%
+# %% Save data
 
 data = data[data[:, 0] > 0, :]  # Truncate zeros
-np.save(fname, data)
-np.savetxt('values.csv', data, delimiter=",")
+np.savetxt(os.path.join('data', 'data.csv'), data, delimiter=",")
 
-# %% Remove g
 
 # %% Plot Data
 
-time_array = [(x - data[0, 0]) * 10 ** -6 for x in data[:, 0]]  # test time in seconds
+time_array = [(timestamp - data[0, 0]) * 10 ** -6 for timestamp in data[:, 0]]  # test time in seconds
 units = ['rad/s', 'G', 'Norm Gauss']
 titles = ['Gyroscope', 'Accelerometer', 'Magnetometer']
 
 
-
-n_sensors = 3
 plt.figure('IMU Sensors')
-for i_sensor in range(n_sensors):
-    plt.subplot(311 + i_sensor)
-    window = [axis + 3 * i_sensor for axis in range(3, 6)]  # TODO: clean this up without magic numbers. window to cycle through sensor data
-    plt.title(titles[i_sensor])
-    plt.plot(time_array, data[:, window])
-    plt.grid()
-    plt.ylabel(units[i_sensor])
-    plt.legend(['X', 'Y', 'Z'])
+plt.subplot(311)
+plt.title('Gyroscope')
+plt.plot(time_array, data[:, 3:6])
+plt.grid()
+plt.ylabel('rad/s')
+plt.legend(['X', 'Y', 'Z'])
+
+plt.subplot(312)
+plt.title('Accelerometer')
+plt.plot(time_array, data[:, 6:9])
+plt.grid()
+plt.ylabel('G')
+plt.legend(['X', 'Y', 'Z'])
+
+plt.subplot(313)
+plt.title('Magnetometer')
+plt.plot(time_array, data[:, 9:12])
+plt.grid()
+plt.ylabel('Norm Gauss')
+plt.legend(['X', 'Y', 'Z'])
 
 plt.xlabel('Time (sec)')
 
