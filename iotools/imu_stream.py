@@ -19,12 +19,12 @@ stop_stream = struct.pack('BB', 0x56, 0x56)
 reset = struct.pack('B', 0xe2)
 
 
-class IMU(serial.Serial):
+class IMU:
+    # TODO: refactor into composition class tha uses serial. This way I dont not have to call self.read and self.write
+    # https://www.geeksforgeeks.org/inheritance-and-composition-in-python/
 
-    def __init__(self,
-                 port,
-                 baudrate):
-        super().__init__(port, baudrate)  # TODO: add keyword arguments needed
+    def __init__(self, ser: serial.Serial):
+        self._ser = ser
 
     def _com_write(self,
                    cmd: bytes,
@@ -45,9 +45,9 @@ class IMU(serial.Serial):
         else:
             final_cmd = b'\xf7' + cmd + chksum
 
-        self.write(final_cmd)
+        self._ser.write(final_cmd)
 
-        return self.read(6) if resp_head else None
+        return self._ser.read(6) if resp_head else None
 
     def software_reset(self) -> None:
         """Resets the software settings on the IMU.
@@ -59,6 +59,7 @@ class IMU(serial.Serial):
         time.sleep(0.5)
 
     def set_stream(self, interval: int, duration: int, delay: int) -> None:
+        # TODO: set slots as input
         """Set streaming settings for the IMU.
         Args:
             interval (int): interval between data points (microseconds)
@@ -67,7 +68,7 @@ class IMU(serial.Serial):
         """
 
         print('---------------------------------------')
-        print('Stream setup for port', self._port)
+        print('Stream setup for port', self._ser.port)
         self._com_write(setResponseHead, resp_head=False)
         print('write response header')
 
@@ -89,7 +90,7 @@ class IMU(serial.Serial):
         """Start streaming the IMU with the settings defined in the set_stream function
         """
         print('---------------------------------------')
-        print('Start stream for port ', self.port)
+        print('Start stream for port ', self._ser.port)
         check = self._com_write(start_stream)
         print('Success/Failure:', check[0])
 
@@ -97,7 +98,7 @@ class IMU(serial.Serial):
         """Stop streaming the IMU.
         """
         print('---------------------------------------')
-        print('Stop stream for port ', self.port)
+        print('Stop stream for port ', self._ser.port)
         check = self._com_write(stop_stream)
         print('Success/Failure:', check[0])
 
@@ -108,7 +109,7 @@ class IMU(serial.Serial):
             np.ndarray: row of data points for that interval
         """
         num_bytes = 47  # number of bytes requested 
-        raw_data = self.read(num_bytes)  # TODO: Make this more dynamic with length
+        raw_data = self._ser.read(num_bytes)  # TODO: Make this more dynamic with length. Make this dependent on slots input from set_stream
         timing = struct.unpack('>I', raw_data[1:5])  # timestamps
         gyro = struct.unpack('>3f', raw_data[7:19])  # gyrscope xyz axes
         acc = struct.unpack('>3f', raw_data[19:31])  # accelerometer xyz axes
@@ -116,7 +117,7 @@ class IMU(serial.Serial):
         temp = struct.unpack('>f', raw_data[43:])  # temperature sensor
 
         # data=[t, imu #, button state, gx, gy, gz, ax, ay, az, mx, my, mz, temp]
-        data = np.array([timing[0], int(self.port[-1]), raw_data[6], *gyro,
+        data = np.array([timing[0], int(self._ser.port[-1]), raw_data[6], *gyro,
                          *acc, *mag, temp[0]])  # TODO: convert to numpy array
 
         return data if raw_data[0] == 0 else np.zeros(13)  # return data if success bit in checksum is 0 else return zero array

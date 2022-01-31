@@ -3,6 +3,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import os
+import serial 
 
 # local imports
 from iotools import IMU
@@ -20,6 +21,7 @@ delay = 1000  # delay before recording starts
 baudrate = 115200
 port = 'COM4'
 
+imu_conn =  serial.Serial(port, baudrate)
 # %% Preallocate data
 data_len = int(duration / interval)  # length of the data array
 n_pts = 13  # number of points collected from each 
@@ -30,7 +32,9 @@ start_t = time.perf_counter()  # start time
 end_t = time.perf_counter()   # end time
 row = 0  # iterate through IMU data array
 
-with IMU(port, baudrate) as my_imu:
+with imu_conn as ser:
+
+    my_imu = IMU(ser)
 
     '''Start streaming data'''
     my_imu.set_stream(interval, duration, delay)  # set timing parameters set above
