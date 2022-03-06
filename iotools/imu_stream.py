@@ -2,7 +2,8 @@ import numpy as np
 import serial
 import struct
 import time
-from typing import Optional
+from typing import Optional, List
+from iotools.imu_cmds import BuildCommands
 
 # %% Code Summary
 
@@ -11,8 +12,9 @@ from typing import Optional
 
 # %% Constant command variables
 # Define stream variables
-slots = struct.pack('BBBBBBBBB', 0x50, 0xfa, 0x26, 0x27, 0x23, 0x2B, 0xff, 0xff, 0xff)  # streaming slots for selected data
-setResponseHead = b'\xdd' + struct.pack('>I', 0x43)
+# TODO: Write config file that stores the pack, unpack and data length information for each command.
+# slots = struct.pack('BBBBBBBBB', 0x50, 0xfa, 0x26, 0x27, 0x23, 0x2B, 0xff, 0xff, 0xff)  # streaming slots for selected data
+setResponseHead = b'\xdd' + struct.pack('>I', 0x43)  # includes success/failure, timestamp, datalength
 RightH_axis = struct.pack('BB', 0x74, 1)
 start_stream = struct.pack('BB', 0x55, 0x55)
 stop_stream = struct.pack('BB', 0x56, 0x56)
@@ -23,8 +25,11 @@ class IMU:
     # TODO: refactor into composition class tha uses serial. This way I dont not have to call self.read and self.write
     # https://www.geeksforgeeks.org/inheritance-and-composition-in-python/
 
-    def __init__(self, ser: serial.Serial):
+    def __init__(self,
+                 ser: serial.Serial,
+                 cmd_builder: BuildCommands):
         self._ser = ser
+        self._cmd_builder = cmd_builder
 
     def _com_write(self,
                    cmd: bytes,
@@ -47,19 +52,19 @@ class IMU:
 
         self._ser.write(final_cmd)
 
-        return self._ser.read(6) if resp_head else None
+        chksum_len = 6  # length of returned checksum 
+        return self._ser.read(chksum_len) if resp_head else None
 
     def software_reset(self) -> None:
         """Resets the software settings on the IMU.
         """
         print('---------------------------------------')
-        print('Software reset for port', self.port)
+        print('Software reset for port', self._ser.port)
         self._com_write(reset, resp_head=False)
         print('paused to reinitialize sensor')
         time.sleep(0.5)
 
     def set_stream(self, interval: int, duration: int, delay: int) -> None:
-        # TODO: set slots as input
         """Set streaming settings for the IMU.
         Args:
             interval (int): interval between data points (microseconds)
@@ -77,12 +82,12 @@ class IMU:
         print('Success/Failure:', check[0])
 
         print('Setting up streaming slots')
-        check = self._com_write(slots)
+        check = self._com_write(self._cmd_builder.pack_commands())
         print('Success/Failure:', check[0])
 
         print('Applying time settings')
         timing = struct.pack('>III', interval, duration, delay)
-        stream_timing = b'\x52' + timing
+        stream_timing = b'\x52' + timing  # TODO: look into combining this w/ top command
         check = self._com_write(stream_timing)
         print('Success/Failure:', check[0])
 
@@ -104,20 +109,25 @@ class IMU:
 
     def read_data(self) -> np.ndarray:
         """Function used to read data for each interval during streaming.
-
         Returns:
             np.ndarray: row of data points for that interval
         """
-        num_bytes = 47  # number of bytes requested 
-        raw_data = self._ser.read(num_bytes)  # TODO: Make this more dynamic with length. Make this dependent on slots input from set_stream
+
+        '''Get number of bytes from data return'''
+        raw_data = self._ser.read(self._cmd_builder.num_bytes)
+        # TODO: convert >3f to f and >I to "idk yet" 
+        # so struct.unpack(iffffffffffffff, raw_data[1:])
+        suc_fail = raw_data[0]
         timing = struct.unpack('>I', raw_data[1:5])  # timestamps
-        gyro = struct.unpack('>3f', raw_data[7:19])  # gyrscope xyz axes
+        data_len = raw_data[5]
+        button_press = raw_data[6]
+        gyro = struct.unpack('>3f', raw_data[7:19])  # gyroscope xyz axes
         acc = struct.unpack('>3f', raw_data[19:31])  # accelerometer xyz axes
         mag = struct.unpack('>3f', raw_data[31:43])  # magnetometer xyz axes
         temp = struct.unpack('>f', raw_data[43:])  # temperature sensor
 
         # data=[t, imu #, button state, gx, gy, gz, ax, ay, az, mx, my, mz, temp]
-        data = np.array([timing[0], int(self._ser.port[-1]), raw_data[6], *gyro,
-                         *acc, *mag, temp[0]])  # TODO: convert to numpy array
+        data = np.array([timing[0], int(self._ser.port[-1]), button_press, *gyro,
+                         *acc, *mag, temp[0]])
 
-        return data if raw_data[0] == 0 else np.zeros(13)  # return data if success bit in checksum is 0 else return zero array
+        return data if raw_data[0] == 0 else np.zeros(len(data))  # return data if success bit in checksum is 0 else return zero array

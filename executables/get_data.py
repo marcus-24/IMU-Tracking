@@ -3,10 +3,10 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import os
-import serial 
+import serial
 
 # local imports
-from iotools import IMU
+from iotools import IMU, BuildCommands
 
 # %% Code Summary
 """This script is an example for how to collect data from a Yost labs
@@ -21,10 +21,15 @@ delay = 1000  # delay before recording starts
 baudrate = 115200
 port = 'COM4'
 
-imu_conn =  serial.Serial(port, baudrate)
+'''Compile slot commands'''
+# TODO: Look into a Creation design pattern for this
+cmd_builder = BuildCommands()
+
+'''Set serial port for IMU'''
+imu_conn = serial.Serial(port, baudrate)
 # %% Preallocate data
 data_len = int(duration / interval)  # length of the data array
-n_pts = 13  # number of points collected from each 
+n_pts = 13  # number of points collected from each
 data = np.zeros((data_len, n_pts))  # IMU data array
 
 # %% Data Collection
@@ -34,7 +39,7 @@ row = 0  # iterate through IMU data array
 
 with imu_conn as ser:
 
-    my_imu = IMU(ser)
+    my_imu = IMU(ser, cmd_builder)  # initialize IMU connection
 
     '''Start streaming data'''
     my_imu.set_stream(interval, duration, delay)  # set timing parameters set above
