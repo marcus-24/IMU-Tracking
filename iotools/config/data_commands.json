@@ -1,0 +1,51 @@
+{
+"set slot":{
+    "command": "0x50",
+    "pack": "B",
+    "unpack": "[]",
+    "data length": 0
+    },
+
+"button state":{
+    "command": "0xfa",
+    "pack": "B",
+    "unpack": "[]",
+    "data length": 1
+    },
+
+"gyroscope":{
+    "command": "0x26",
+    "pack": "B",
+    "unpack": ">3f",
+    "data length": 12
+    },
+
+"accelerometer":{
+    "command": "0x27",
+    "pack": "B",
+    "unpack": ">3f",
+    "data length": 12
+    },
+
+"magnetometer norm":{
+    "command": "0x23",
+    "pack": "B",
+    "unpack": ">3f",
+    "data length": 12
+    },
+
+"temperature":{
+    "command": "0x2B",
+    "pack": "B",
+    "unpack": ">3f",
+    "data length": 4
+    },
+
+"empty slot":{
+    "command": "0xff",
+    "pack": "B",
+    "unpack": "[]",
+    "data length": 0
+    }
+    
+}

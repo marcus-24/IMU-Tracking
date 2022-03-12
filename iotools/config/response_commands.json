@@ -1,0 +1,36 @@
+{
+"success bit":{
+    "command": "0x1",
+    "data length": 1
+    },
+
+"timestamp":{
+    "command": "0x2",
+    "data length": 4
+    },
+
+"command echo":{
+    "command": "0x4",
+    "data length": 1
+    },
+
+"additive checksum":{
+    "command": "0x8",
+    "data length": 1
+    },
+
+"logical id":{
+    "command": "0x10",
+    "data length": 1
+    },
+
+"serial number":{
+    "command": "0x20",
+    "data length": 4
+    },
+
+"data length":{
+    "command": "0x40",
+    "data length": 1
+    }
+}

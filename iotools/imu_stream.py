@@ -1,9 +1,12 @@
+# standard imports
 import numpy as np
 import serial
 import struct
 import time
-from typing import Optional, List
-from iotools.imu_cmds import BuildCommands
+from typing import Optional
+
+# local imports
+from iotools.build_cmd import BuildCommands
 
 # %% Code Summary
 
@@ -12,13 +15,10 @@ from iotools.imu_cmds import BuildCommands
 
 # %% Constant command variables
 # Define stream variables
-# TODO: Write config file that stores the pack, unpack and data length information for each command.
-# slots = struct.pack('BBBBBBBBB', 0x50, 0xfa, 0x26, 0x27, 0x23, 0x2B, 0xff, 0xff, 0xff)  # streaming slots for selected data
-setResponseHead = b'\xdd' + struct.pack('>I', 0x43)  # includes success/failure, timestamp, datalength
 RightH_axis = struct.pack('BB', 0x74, 1)
-start_stream = struct.pack('BB', 0x55, 0x55)
-stop_stream = struct.pack('BB', 0x56, 0x56)
-reset = struct.pack('B', 0xe2)
+START_STREAM = struct.pack('BB', 0x55, 0x55)
+STOP_STREAM = struct.pack('BB', 0x56, 0x56)
+RESET = struct.pack('B', 0xe2)
 
 
 class IMU:
@@ -27,7 +27,7 @@ class IMU:
 
     def __init__(self,
                  ser: serial.Serial,
-                 cmd_builder: BuildCommands):
+                 cmd_builder: BuildCommands = BuildCommands()):
         self._ser = ser
         self._cmd_builder = cmd_builder
 
@@ -60,7 +60,7 @@ class IMU:
         """
         print('---------------------------------------')
         print('Software reset for port', self._ser.port)
-        self._com_write(reset, resp_head=False)
+        self._com_write(RESET, resp_head=False)
         print('paused to reinitialize sensor')
         time.sleep(0.5)
 
@@ -74,7 +74,7 @@ class IMU:
 
         print('---------------------------------------')
         print('Stream setup for port', self._ser.port)
-        self._com_write(setResponseHead, resp_head=False)
+        self._com_write(self._cmd_builder.pack_response_header(), resp_head=False)
         print('write response header')
 
         print('Setting Right Hand Coordinate system')
@@ -82,12 +82,12 @@ class IMU:
         print('Success/Failure:', check[0])
 
         print('Setting up streaming slots')
-        check = self._com_write(self._cmd_builder.pack_commands())
+        check = self._com_write(self._cmd_builder.pack_data_commands())
         print('Success/Failure:', check[0])
 
         print('Applying time settings')
         timing = struct.pack('>III', interval, duration, delay)
-        stream_timing = b'\x52' + timing  # TODO: look into combining this w/ top command
+        stream_timing = struct.pack('B', 0x52) + timing  # TODO: look into combining this w/ top command
         check = self._com_write(stream_timing)
         print('Success/Failure:', check[0])
 
@@ -96,7 +96,7 @@ class IMU:
         """
         print('---------------------------------------')
         print('Start stream for port ', self._ser.port)
-        check = self._com_write(start_stream)
+        check = self._com_write(START_STREAM)
         print('Success/Failure:', check[0])
 
     def stop_streaming(self):
@@ -104,8 +104,10 @@ class IMU:
         """
         print('---------------------------------------')
         print('Stop stream for port ', self._ser.port)
-        check = self._com_write(stop_stream)
+        check = self._com_write(STOP_STREAM)
         print('Success/Failure:', check[0])
+
+    # def read_response_header(self) -> np.ndarray:
 
     def read_data(self) -> np.ndarray:
         """Function used to read data for each interval during streaming.

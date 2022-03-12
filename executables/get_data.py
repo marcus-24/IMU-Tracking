@@ -6,7 +6,7 @@ import os
 import serial
 
 # local imports
-from iotools import IMU, BuildCommands
+from iotools import IMU
 
 # %% Code Summary
 """This script is an example for how to collect data from a Yost labs
@@ -21,12 +21,9 @@ delay = 1000  # delay before recording starts
 baudrate = 115200
 port = 'COM4'
 
-'''Compile slot commands'''
-# TODO: Look into a Creation design pattern for this
-cmd_builder = BuildCommands()
-
 '''Set serial port for IMU'''
 imu_conn = serial.Serial(port, baudrate)
+
 # %% Preallocate data
 data_len = int(duration / interval)  # length of the data array
 n_pts = 13  # number of points collected from each
@@ -39,7 +36,7 @@ row = 0  # iterate through IMU data array
 
 with imu_conn as ser:
 
-    my_imu = IMU(ser, cmd_builder)  # initialize IMU connection
+    my_imu = IMU(ser)  # initialize IMU connection
 
     '''Start streaming data'''
     my_imu.set_stream(interval, duration, delay)  # set timing parameters set above

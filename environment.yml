@@ -11,4 +11,4 @@ dependencies:
   - pycodestyle
   - pylint
   - pyserial=3.4
-  - python=3.9
+  - python=3.10
