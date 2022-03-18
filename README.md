@@ -1,5 +1,5 @@
 # IMU-Tracking
-
+<img src=https://img.shields.io/badge/Python-3.10.2-brightgreen\>
 ## Objective 
 This repository focuses on demonstrating techniques to track kinematics from inertial measurement units (IMUs).
 
