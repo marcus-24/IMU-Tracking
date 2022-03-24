@@ -1,37 +1,37 @@
 {
 "success bit":{
-    "command": "0x1",
+    "command": 1,
     "raw length": 1
     },
 
 "timestamp":{
-    "command": "0x2",
+    "command": 2,
     "raw length": 4,
     "unpack": ">I"
     },
 
 "command echo":{
-    "command": "0x4",
+    "command": 4,
     "raw length": 1
     },
 
 "additive checksum":{
-    "command": "0x8",
+    "command": 8,
     "raw length": 1
     },
 
 "logical id":{
-    "command": "0x10",
+    "command": 16,
     "raw length": 1
     },
 
 "serial number":{
-    "command": "0x20",
+    "command": 32,
     "raw length": 4
     },
 
 "data length":{
-    "command": "0x40",
+    "command": 64,
     "raw length": 1
     }
 }

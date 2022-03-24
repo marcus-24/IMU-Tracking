@@ -1,13 +1,13 @@
 {
 "button state":{
-    "command": "0xfa",
+    "command": 250,
     "pack": "B",
     "return length": 1,
     "raw length": 1
     },
 
 "gyroscope":{
-    "command": "0x26",
+    "command": 38,
     "pack": "B",
     "unpack": ">3f",
     "return length": 3,
@@ -15,7 +15,7 @@
     },
 
 "accelerometer":{
-    "command": "0x27",
+    "command": 39,
     "pack": "B",
     "unpack": ">3f",
     "return length": 3,
@@ -23,7 +23,7 @@
     },
 
 "magnetometer norm":{
-    "command": "0x23",
+    "command": 35,
     "pack": "B",
     "unpack": ">3f",
     "return length": 3,
@@ -31,7 +31,7 @@
     },
 
 "temperature":{
-    "command": "0x2B",
+    "command": 43,
     "pack": "B",
     "unpack": "f",
     "return length": 1,

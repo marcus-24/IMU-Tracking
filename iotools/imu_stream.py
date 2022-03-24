@@ -14,11 +14,11 @@ from iotools.build_cmd import BuildCommands
 
 # %% Constant command variables
 # Define stream variables
-RIGHT_AXIS = pack('BB', 0x74, 1)
-SET_STREAM = pack('B', 0x52)
-START_STREAM = pack('BB', 0x55, 0x55)
-STOP_STREAM = pack('BB', 0x56, 0x56)
-RESET = pack('B', 0xe2)
+RIGHT_AXIS = pack('BB', 116, 1)
+SET_STREAM = pack('B', 82)
+START_STREAM = pack('BB', 85, 85)
+STOP_STREAM = pack('BB', 86, 86)
+RESET = pack('B', 226)
 
 
 class IMU:

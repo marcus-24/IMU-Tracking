@@ -18,8 +18,9 @@ DEFAULT_RESP_COMMANDS = {key: value for key, value in RESPONSE_COMMANDS.items()
                          if key in ["success bit", "timestamp", "data length"]}
 
 '''On time commands'''
-SET_RESP_HEAD = pack('B', 0xDD)
+SET_RESP_HEAD = 221
 SET_SLOT = 80  # TODO: Find a way to make command format consistent
+EMPTY_SLOT = 255
 # TODO: Look into a Creation design pattern for this
 
 
@@ -61,17 +62,13 @@ class BuildCommands:
     def total_num_bytes(self) -> int:
         return self._total_num_bytes
 
-    @staticmethod
-    def _hex_to_int(cmd: str) -> int:
-        return int(cmd, 16)
-
     def pack_response_header(self) -> bytes:
         """Pack response header command into bytes
         Returns:
             bytes: converted response header command
         """
-        int_cmd = sum([self._hex_to_int(cmd["command"]) for _, cmd in self._resp_commands.items()])
-        return SET_RESP_HEAD + pack('>I', int_cmd)
+        int_cmd = sum([cmd["command"] for _, cmd in self._resp_commands.items()])
+        return pack('B', SET_RESP_HEAD) + pack('>I', int_cmd)
 
     def pack_data_commands(self) -> bytes:
         """Pack hex commands into bytes to send to IMU
@@ -86,8 +83,7 @@ class BuildCommands:
         pack_chars = self._max_slots * 'B'  # set whole pack to binary
 
         '''compile hex commands'''
-        hex_cmds = [SET_SLOT]
-        hex_cmds += [self._hex_to_int(cmd["command"]) for _, cmd in self._data_commands.items()]
-        hex_cmds += n_empty * [self._hex_to_int(DATA_COMMANDS["empty slot"]["command"])]  # add empty slots if not all were used
+        # Set slot, list of data commands, fill remainder with empty slots
+        hex_cmds = [SET_SLOT] + [cmd["command"] for _, cmd in self._data_commands.items()] + (n_empty * [EMPTY_SLOT])
 
         return pack(pack_chars, *hex_cmds)
