@@ -1,5 +1,5 @@
-from typing import Dict
-from struct import pack, calcsize
+from typing import Dict, NewType
+from struct import pack
 import json
 import os
 
@@ -9,13 +9,13 @@ data_path = os.path.join(config_dir, 'data_commands.json')
 resp_path = os.path.join(config_dir, 'response_commands.json')
 
 with (open(data_path) as data_file, open(resp_path) as resp_file):
-    DATA_COMMANDS = json.load(data_file)
-    RESPONSE_COMMANDS = json.load(resp_file)
+    DATA_CMDS = json.load(data_file)
+    RESP_CMDS = json.load(resp_file)
 
 '''Define defaults'''
-DEFAULT_DATA_COMMANDS = {key: value for key, value in DATA_COMMANDS.items() if key != "empty slot"}
-DEFAULT_RESP_COMMANDS = {key: value for key, value in RESPONSE_COMMANDS.items()
-                         if key in ["success bit", "timestamp", "data length"]}
+DEFAULT_DATA_CMDS = {key: value for key, value in DATA_CMDS.items() if key != "empty slot"}
+DEFAULT_RESP_CMDS = {key: value for key, value in RESP_CMDS.items()
+                     if key in ["success bit", "timestamp", "data length"]}
 
 '''On time commands'''
 SET_RESP_HEAD = 221
@@ -23,36 +23,56 @@ SET_SLOT = 80  # TODO: Find a way to make command format consistent
 EMPTY_SLOT = 255
 # TODO: Look into a Creation design pattern for this
 
+CmdType = NewType('CmdType', Dict[str, Dict[str, str | int]])
+
 
 class BuildCommands:
     """Class to compile IMU commands"""
 
     def __init__(self,
-                 data_commands: Dict[str, Dict[str, str | int]] = DEFAULT_DATA_COMMANDS,
-                 resp_commands: Dict[str, Dict[str, str | int]] = DEFAULT_RESP_COMMANDS,
+                 data_cmds: CmdType = DEFAULT_DATA_CMDS,
+                 resp_cmds: CmdType = DEFAULT_RESP_CMDS,
                  max_slots: int = 9):
 
-        self._data_commands = data_commands
-        self._resp_commands = resp_commands
+        self.data_cmds = data_cmds
+        self.resp_cmds = resp_cmds
         self._max_slots = max_slots  # at the time of writing this code, yost lab IMUs only
         # take 8 streaming slots + 1 for set slot command
 
-    # TODO: Throw value error if response header is not in resp_commands
+        # TODO: Throw value error if response header is not in resp_cmds
 
         '''Define length of response header'''
-        self._resp_num_bytes = sum([cmd["raw length"] for _, cmd in resp_commands.items()])
+        self._resp_num_bytes = sum([cmd["raw length"] for _, cmd in resp_cmds.items()])
 
         '''Define number of bytes from IMU's returned data'''
-        data_num_bytes = sum([cmd['raw length'] for _, cmd in data_commands.items()]) # TODO: Think about using calcsize
+        data_num_bytes = sum([cmd['raw length'] for _, cmd in data_cmds.items()])  # TODO: Think about using calcsize
         self._total_num_bytes = data_num_bytes + self._resp_num_bytes
 
-    @property
-    def resp_commands(self) -> Dict[str, Dict[str, str | int]]:
-        return self._resp_commands
+        # self._command_names = list(resp_cmds.keys()) + list(data_cmds.keys())
+
+    @staticmethod
+    def _check_input(user_cmds: CmdType, default_cmds: CmdType, msg: str):
+        for _, cmd in user_cmds.items():
+            if cmd not in default_cmds.values():
+                raise ValueError(msg)
 
     @property
-    def data_commands(self) -> Dict[str, Dict[str, str | int]]:
-        return self._data_commands
+    def resp_cmds(self) -> CmdType:
+        return self._resp_cmds
+
+    @resp_cmds.setter
+    def resp_cmds(self, user_cmds: CmdType):
+        self._check_input(user_cmds, RESP_CMDS, "Response header command does not exist")
+        self._resp_cmds = user_cmds
+
+    @property
+    def data_cmds(self) -> CmdType:
+        return self._data_cmds
+    
+    @data_cmds.setter
+    def data_cmds(self, user_cmds: CmdType):
+        self._check_input(user_cmds, DATA_CMDS, "IMU data command does not exist")
+        self._data_cmds = user_cmds
 
     @property
     def resp_num_bytes(self) -> int:
@@ -67,16 +87,16 @@ class BuildCommands:
         Returns:
             bytes: converted response header command
         """
-        int_cmd = sum([cmd["command"] for _, cmd in self._resp_commands.items()])
+        int_cmd = sum([cmd["command"] for _, cmd in self._resp_cmds.items()])
         return pack('B', SET_RESP_HEAD) + pack('>I', int_cmd)
 
-    def pack_data_commands(self) -> bytes:
+    def pack_data_cmds(self) -> bytes:
         """Pack hex commands into bytes to send to IMU
         Returns:
             bytes: hex commands packed into bytes
         """
 
-        cmd_len = len(self._data_commands)  # length of data command slots
+        cmd_len = len(self._data_cmds)  # length of data command slots
         n_empty = (self._max_slots - cmd_len) - 1  # number of empty slots (remove one for set slot command)
 
         '''compile pack characters'''
@@ -84,6 +104,6 @@ class BuildCommands:
 
         '''compile hex commands'''
         # Set slot, list of data commands, fill remainder with empty slots
-        hex_cmds = [SET_SLOT] + [cmd["command"] for _, cmd in self._data_commands.items()] + (n_empty * [EMPTY_SLOT])
+        hex_cmds = [SET_SLOT] + [cmd["command"] for _, cmd in self._data_cmds.items()] + (n_empty * [EMPTY_SLOT])
 
         return pack(pack_chars, *hex_cmds)

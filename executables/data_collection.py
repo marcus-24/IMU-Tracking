@@ -55,6 +55,7 @@ with imu_conn as ser:
     my_imu.software_reset()
 
 # %% Save data
+# TODO: Make data a dataframe so that each column has a title. Can use sensor names in build_cmd object
 data = data[data[:, 1] > 0, :]  # Truncate zeros
 np.savetxt(os.path.join('data', 'data.csv'), data, delimiter=",")
 

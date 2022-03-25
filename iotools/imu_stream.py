@@ -6,7 +6,7 @@ import time
 from typing import Dict, Tuple
 
 # local imports
-from iotools.build_cmd import BuildCommands
+from iotools.build_cmd import BuildCommands, CmdType
 
 # %% Code Summary
 """The IMU class provides the functions needed to connect and execute commands on the bluetooth IMU.
@@ -74,7 +74,7 @@ class IMU:
 
         self._com_write(RIGHT_AXIS, msg='Setting Right Hand Coordinate system')
 
-        self._com_write(self._bldg_cmd.pack_data_commands(), msg='Setting up streaming slots')
+        self._com_write(self._bldg_cmd.pack_data_cmds(), msg='Setting up streaming slots')
 
         timing = SET_STREAM + pack('>III', interval, duration, delay)
         self._com_write(timing, msg='Applying time settings')
@@ -92,12 +92,12 @@ class IMU:
     def _read_bytes(self,
                     raw_data: bytes,
                     bytes_read: int,
-                    commands: Dict[str, Dict[str, str | int]]) -> Tuple[np.ndarray, int]:
+                    commands: CmdType) -> Tuple[np.ndarray, int]:
         """_summary_
         Args:
             raw_data (bytes): _description_
             bytes_read (int): _description_
-            commands (Dict[str, Dict[str, str  |  int]]): _description_
+            commands (CmdType): _description_
 
         Returns:
             Tuple[np.ndarray, int]: _description_
@@ -123,9 +123,9 @@ class IMU:
 
         '''Read data from IMU byte array'''
         bytes_read = 0  # number of bytes read so far in buffer
-        parsed_resp, bytes_read = self._read_bytes(raw_data, bytes_read, self._bldg_cmd.resp_commands)
-        parsed_data, _ = self._read_bytes(raw_data, bytes_read, self._bldg_cmd.data_commands)
-        data = parsed_resp + parsed_data
+        parsed_resp, bytes_read = self._read_bytes(raw_data, bytes_read, self._bldg_cmd.resp_cmds)  # read response header
+        parsed_data, _ = self._read_bytes(raw_data, bytes_read, self._bldg_cmd.data_cmds)  # read imu data
+        data = parsed_resp + parsed_data  # combine data into one array
 
-        # TODO: account for when success bit is not the first header
+        # TODO: account for when success bit is not the first header (Write into dataframe)
         return data if raw_data[0] == 0 else np.zeros(len(data))  # return data if success bit in checksum is 0 else return zero array

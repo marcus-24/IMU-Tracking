@@ -22,6 +22,14 @@
     "raw length": 12
     },
 
+"magnetometer":{
+    "command": 67,
+    "pack": "B",
+    "unpack": "f",
+    "return length": 1,
+    "raw length": 4
+    },  
+
 "magnetometer norm":{
     "command": 35,
     "pack": "B",
@@ -29,8 +37,8 @@
     "return length": 3,
     "raw length": 12
     },
-
-"temperature":{
+ 
+"temperature C":{
     "command": 43,
     "pack": "B",
     "unpack": "f",
@@ -38,10 +46,19 @@
     "raw length": 4
     },
 
-"empty slot":{
-    "command": "0xff",
+"quaternions":{
+    "command": 0,
     "pack": "B",
-    "return length": 0
+    "unpack": ">4f",
+    "return length": 4,
+    "raw length": 16
+    },
+
+"euler angles":{
+    "command": 1,
+    "pack": "B",
+    "unpack": ">3f",
+    "return length": 3,
+    "raw length": 12
     }
-    
 }
