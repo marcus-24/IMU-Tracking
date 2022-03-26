@@ -1,5 +1,5 @@
 # Unit tests
-Each unit test file can be run directly within the script either pressing "Run" button on your IDE or run the following command within the tests folder:
+Each unit test file can be run directly within the script by either pressing the "Run" button on your IDE or running the following command within the tests folder:
 
 `python -m unittest discover`
 
