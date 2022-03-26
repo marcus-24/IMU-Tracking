@@ -18,7 +18,7 @@ Then install the local modules:
 
 ## IMU Data Collection
 
-The plot shown below was generated using the get_data.py script while an IMU was placed on a rotating stool for 20 seconds.
+The plot shown below was generated using the data_collection.py script while an IMU was placed on a rotating stool for 20 seconds.
 
 <img  src="Rotating IMU.png" align="center"/>
 

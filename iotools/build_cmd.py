@@ -4,7 +4,8 @@ import json
 import os
 
 '''Load imu commands'''
-config_dir = os.path.join('iotools', 'config')
+abs_path = os.path.dirname(os.path.realpath(__file__))
+config_dir = os.path.join(abs_path, 'config')
 data_path = os.path.join(config_dir, 'data_commands.json')
 resp_path = os.path.join(config_dir, 'response_commands.json')
 

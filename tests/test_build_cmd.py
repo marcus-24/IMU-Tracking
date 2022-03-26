@@ -21,7 +21,7 @@ class BuildCmdTests(unittest.TestCase):
     def test_fill_all_streaming_slots_with_commands(self):
         eight_cmds = {key: value for idx, (key, value) in enumerate(DATA_CMDS.items()) if idx < 8}
         hex_cmds = [80] + [cmd["command"] for _, cmd in eight_cmds.items()]
-        self.assertEquals(BuildCommands(data_cmds=eight_cmds).pack_data_cmds(),
+        self.assertEqual(BuildCommands(data_cmds=eight_cmds).pack_data_cmds(),
                           pack('BBBBBBBBB', *hex_cmds)
                           )
 
@@ -33,7 +33,6 @@ class BuildCmdTests(unittest.TestCase):
                     }
         with self.assertRaises(ValueError):
             BuildCommands(data_cmds=data_cmd)
-
 
     def test_too_many_streaming_slots(self):
         
