@@ -26,4 +26,5 @@ jobs:
         $CONDA/bin/conda env update --file environment.yml --name base
         $CONDA/bin/activate base
         pip install -e .
+        $CONDA/bin/conda install numpy
         python -m unittest discover tests
