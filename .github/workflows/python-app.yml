@@ -26,6 +26,6 @@ jobs:
         $CONDA/bin/conda env update --file environment.yml --name base
         $CONDA/bin/activate base
         pip install -e .
-    - name: Test with pytest
+    - name: Test with unittest
       run: |
-        pytest tests/test*
+        python -m unittest discover tests
