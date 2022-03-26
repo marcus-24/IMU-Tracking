@@ -3,7 +3,7 @@ import numpy as np
 import serial
 from struct import pack, unpack_from
 import time
-from typing import Dict, Tuple
+from typing import Tuple
 
 # local imports
 from iotools.build_cmd import BuildCommands, CmdType
