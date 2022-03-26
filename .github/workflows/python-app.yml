@@ -25,9 +25,7 @@ jobs:
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         $CONDA/bin/conda env create -f environment.yml
         $CONDA/bin/activate imu_env
-        $CONDA/bin/conda env list
-        $CONDA/bin/conda which python
         pip install -e .
     - name: Test with unittest
       run: |
-        python -m unittest discover tests
+        /usr/share/miniconda/envs/imu_env/python -m unittest discover tests
