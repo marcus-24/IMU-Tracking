@@ -1,14 +1,12 @@
 {
 "button state":{
     "command": 250,
-    "pack": "B",
     "return length": 1,
     "raw length": 1
     },
 
 "gyroscope":{
     "command": 38,
-    "pack": "B",
     "unpack": ">3f",
     "return length": 3,
     "raw length": 12
@@ -16,7 +14,6 @@
 
 "accelerometer":{
     "command": 39,
-    "pack": "B",
     "unpack": ">3f",
     "return length": 3,
     "raw length": 12
@@ -24,7 +21,6 @@
 
 "magnetometer":{
     "command": 67,
-    "pack": "B",
     "unpack": "f",
     "return length": 1,
     "raw length": 4
@@ -32,7 +28,6 @@
 
 "magnetometer norm":{
     "command": 35,
-    "pack": "B",
     "unpack": ">3f",
     "return length": 3,
     "raw length": 12
@@ -40,7 +35,6 @@
  
 "temperature C":{
     "command": 43,
-    "pack": "B",
     "unpack": "f",
     "return length": 1,
     "raw length": 4
@@ -48,7 +42,6 @@
 
 "quaternions":{
     "command": 0,
-    "pack": "B",
     "unpack": ">4f",
     "return length": 4,
     "raw length": 16
@@ -56,9 +49,15 @@
 
 "euler angles":{
     "command": 1,
-    "pack": "B",
     "unpack": ">3f",
     "return length": 3,
     "raw length": 12
+    },
+
+"battery voltage":{
+    "command": 201,
+    "unpack": "f",
+    "return length": 1,
+    "raw length": 4
     }
 }

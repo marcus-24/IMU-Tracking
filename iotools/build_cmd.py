@@ -13,7 +13,8 @@ with (open(data_path) as data_file, open(resp_path) as resp_file):
     RESP_CMDS = json.load(resp_file)
 
 '''Define defaults'''
-DEFAULT_DATA_CMDS = {key: value for key, value in DATA_CMDS.items() if key != "empty slot"}
+DEFAULT_DATA_CMDS = {key: value for key, value in DATA_CMDS.items()
+                     if key in ["button state", "gyroscope", "accelerometer", "magnetometer norm", "temperature C"]}
 DEFAULT_RESP_CMDS = {key: value for key, value in RESP_CMDS.items()
                      if key in ["success bit", "timestamp", "data length"]}
 
@@ -30,14 +31,14 @@ class BuildCommands:
     """Class to compile IMU commands"""
 
     def __init__(self,
+                 max_slots: int = 8,
                  data_cmds: CmdType = DEFAULT_DATA_CMDS,
-                 resp_cmds: CmdType = DEFAULT_RESP_CMDS,
-                 max_slots: int = 9):
+                 resp_cmds: CmdType = DEFAULT_RESP_CMDS):
 
+        self._max_slots = max_slots  # at the time of writing this code, yost lab IMUs only
+        # take 8 streaming slots
         self.data_cmds = data_cmds
         self.resp_cmds = resp_cmds
-        self._max_slots = max_slots  # at the time of writing this code, yost lab IMUs only
-        # take 8 streaming slots + 1 for set slot command
 
         # TODO: Throw value error if response header is not in resp_cmds
 
@@ -51,7 +52,7 @@ class BuildCommands:
         # self._command_names = list(resp_cmds.keys()) + list(data_cmds.keys())
 
     @staticmethod
-    def _check_input(user_cmds: CmdType, default_cmds: CmdType, msg: str):
+    def _check_cmd_input(user_cmds: CmdType, default_cmds: CmdType, msg: str):
         for _, cmd in user_cmds.items():
             if cmd not in default_cmds.values():
                 raise ValueError(msg)
@@ -62,7 +63,7 @@ class BuildCommands:
 
     @resp_cmds.setter
     def resp_cmds(self, user_cmds: CmdType):
-        self._check_input(user_cmds, RESP_CMDS, "Response header command does not exist")
+        self._check_cmd_input(user_cmds, RESP_CMDS, "Response header command does not exist")
         self._resp_cmds = user_cmds
 
     @property
@@ -71,7 +72,11 @@ class BuildCommands:
     
     @data_cmds.setter
     def data_cmds(self, user_cmds: CmdType):
-        self._check_input(user_cmds, DATA_CMDS, "IMU data command does not exist")
+        self._check_cmd_input(user_cmds, DATA_CMDS, "IMU data command does not exist")
+
+        '''Check if too many commands are set'''
+        if len(user_cmds) > self._max_slots: 
+            raise ValueError("Too many commands are set")
         self._data_cmds = user_cmds
 
     @property
@@ -97,10 +102,10 @@ class BuildCommands:
         """
 
         cmd_len = len(self._data_cmds)  # length of data command slots
-        n_empty = (self._max_slots - cmd_len) - 1  # number of empty slots (remove one for set slot command)
+        n_empty = (self._max_slots - cmd_len)  # number of empty slots 
 
         '''compile pack characters'''
-        pack_chars = self._max_slots * 'B'  # set whole pack to binary
+        pack_chars = (self._max_slots + 1) * 'B'  # set whole pack to binary (add one for set slot cmd)
 
         '''compile hex commands'''
         # Set slot, list of data commands, fill remainder with empty slots
