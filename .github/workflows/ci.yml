@@ -60,5 +60,5 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
-        shell: bash -l {0}
+        shell: bash -l {0}  # adds name to bash command
         run: python -m unittest discover
