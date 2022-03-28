@@ -1,6 +1,5 @@
 # Unit tests
-Each unit test file can be run directly within the script by either pressing the "Run" button on your IDE or running the following command within the tests folder:
+These unit test are executed in the GitHub Actions workflow (.github/workflows/ci.yml) for each push and pull request. If you would like to execute them manually, you can run the following command in the tests folder:
 
 `python -m unittest discover`
 
-The end goal is to automate the unit test execution in each push and pull requests using the GitHub Actions feature.
