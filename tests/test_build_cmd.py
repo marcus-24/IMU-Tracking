@@ -1,7 +1,9 @@
+# standard imports
 import unittest
 from struct import pack
 
-from iotools.build_cmd import BuildCommands, DATA_CMDS, RESP_CMDS, SET_RESP_HEAD, SET_SLOT
+# local imports
+from iotools import BuildCommands, DATA_CMDS, RESP_CMDS, SET_RESP_HEAD, SET_SLOT
 
 
 class BuildCmdTests(unittest.TestCase):
@@ -11,7 +13,8 @@ class BuildCmdTests(unittest.TestCase):
 
     def test_all_responses(self):
         self.bldg_cmd.resp_cmds = RESP_CMDS
-        self.assertEqual(pack('B', SET_RESP_HEAD) + pack('>I', 127),
+        response_cmd_total = 127  # sum of all the response commands
+        self.assertEqual(pack('B', SET_RESP_HEAD) + pack('>I', response_cmd_total),
                          self.bldg_cmd.pack_response_header())
 
     def test_invalid_response(self):

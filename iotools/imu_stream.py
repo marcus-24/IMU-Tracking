@@ -6,7 +6,7 @@ import time
 from typing import Tuple
 
 # local imports
-from iotools.build_cmd import BuildCommands, CmdType
+from iotools import BuildCommands, CmdType
 
 # %% Code Summary
 """The IMU class provides the functions needed to connect and execute commands on the bluetooth IMU.
@@ -93,18 +93,18 @@ class IMU:
                     raw_data: bytes,
                     bytes_read: int,
                     commands: CmdType) -> Tuple[np.ndarray, int]:
-        """_summary_
+        """Reads raw bytes returned from the IMU and unpacks them into readable data
         Args:
-            raw_data (bytes): _description_
-            bytes_read (int): _description_
-            commands (CmdType): _description_
+            raw_data (bytes): raw data from IMU
+            bytes_read (int): number of bytes that have been read from bytes array so far
+            commands (CmdType): IMU commands to read and unpack
 
         Returns:
-            Tuple[np.ndarray, int]: _description_
+            Tuple[np.ndarray, int]: parsed data and the updated bytes_read
         """
 
         parsed_data = list()
-        for _, cmd in commands.items():
+        for _, cmd in commands.items():  # cycle through selected commands
             if "unpack" in cmd.keys():  # if data needs to be unpacked
                 parsed_data.extend(unpack_from(cmd['unpack'], raw_data, offset=bytes_read))
             else:  # if you can read data as is
