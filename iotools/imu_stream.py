@@ -6,7 +6,7 @@ import time
 from typing import Tuple
 
 # local imports
-from iotools import BuildCommands, CmdType
+from iotools.build_cmd import BuildCommands, CmdType
 
 # %% Code Summary
 """The IMU class provides the functions needed to connect and execute commands on the bluetooth IMU.

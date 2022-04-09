@@ -3,7 +3,7 @@ import unittest
 from struct import pack
 
 # local imports
-from iotools import BuildCommands, DATA_CMDS, RESP_CMDS, SET_RESP_HEAD, SET_SLOT
+from iotools.build_cmd import BuildCommands, DATA_CMDS, RESP_CMDS, SET_RESP_HEAD, SET_SLOT
 
 
 class BuildCmdTests(unittest.TestCase):
