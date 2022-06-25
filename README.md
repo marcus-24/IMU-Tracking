@@ -8,13 +8,7 @@ To keep the python modules consistent between users, the `imu_env` python enviro
 
 `conda env create -f environment.yml`
 
-The local modules that are developed with the repository (example: iotools) can be install into the `imu_env` by first switching into the environment using:
-
-`conda activate imu_env`
-
-Then install the local modules:
-
-`pip install -e .`
+This installs the python modules from the conda channels and the local modules (i.e.: iotools) from the setup.py file.
 
 ## IMU Data Collection
 

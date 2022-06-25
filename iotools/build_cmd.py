@@ -76,7 +76,7 @@ class BuildCommands:
         self._check_cmd_input(user_cmds, DATA_CMDS, "IMU data command does not exist")
 
         '''Check if too many commands are set'''
-        if len(user_cmds) > self._max_slots: 
+        if len(user_cmds) > self._max_slots:
             raise ValueError("Too many commands are set")
         self._data_cmds = user_cmds
 
